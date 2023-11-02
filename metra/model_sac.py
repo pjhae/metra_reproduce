@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
+from torch.optim import Adam
+
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
@@ -152,61 +154,3 @@ class DeterministicPolicy(nn.Module):
         self.action_bias = self.action_bias.to(device)
         self.noise = self.noise.to(device)
         return super(DeterministicPolicy, self).to(device)
-
-
-
-# For Metra
-class phi(nn.Module):
-    def __init__(self, num_inputs, hidden_dim):
-        super(QNetwork, self).__init__()
-
-        # Q architecture
-        self.linear1 = nn.Linear(num_inputs, hidden_dim)
-        self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear3 = nn.Linear(hidden_dim, 1)
-
-        self.apply(weights_init_)
-
-    def forward(self, state):
-      
-        x1 = F.relu(self.linear1(state))
-        x1 = F.relu(self.linear2(x1))
-        x1 = self.linear3(x1)
-
-        return x1
-
-    def update_parameters(self, memory, batch_size, lambda_value, epsilon=1e-2):
-        state_batch, _, next_state_batch, _, _ = memory.sample(batch_size=batch_size)
-
-        z_batch = state_batch[:, -8:]  # Extracting z from the last 8 components of state
-
-        phi_s = self(state_batch)
-        phi_next_s = self(next_state_batch)
-
-        loss = (phi_next_s - phi_s).mul(z_batch).sum(1) + lambda_value.detach() * torch.min(epsilon, 1 - (phi_s - phi_next_s).pow(2).sum(1))
-
-        self.optimizer.zero_grad()
-        loss.mean().backward()
-        self.optimizer.step()
-
-        return loss.mean().item()
-
-class Lambda():
-    def __init__(self, lr=0.001):
-        self.lambda_value = torch.tensor(1.0, requires_grad=True, device=device)
-        self.optimizer = torch.optim.Adam([self.lambda_value], lr=lr)
-        self.epsilon = 1e-2  # You can adjust this value
-
-    def update_parameters(self, memory, batch_size, phi_net):
-        state_batch, _, next_state_batch, _, _ = memory.sample(batch_size=batch_size)
-
-        phi_s = phi_net(state_batch)
-        phi_next_s = phi_net(next_state_batch)
-
-        loss = self.lambda_value * torch.min(self.epsilon, 1 - (phi_s - phi_next_s).pow(2).sum(1))
-
-        self.optimizer.zero_grad()
-        loss.mean().backward()
-        self.optimizer.step()
-
-        return loss.mean().item()
