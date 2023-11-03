@@ -71,7 +71,7 @@ class SAC(object):
         phi_diff = phi_next_state - phi_state
 
         # 'ij,ij->i' means take the dot product along the second dimension for each i in the first dimension
-        pseudo_reward_batch = torch.einsum('ij,ij->i', (phi_diff, skill_batch))
+        pseudo_reward_batch = torch.einsum('ij,ij->i', (phi_diff, skill_batch)).unsqueeze(1)
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.policy.sample(next_state_batch)
