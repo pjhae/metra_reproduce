@@ -12,6 +12,7 @@ class SAC(object):
         self.gamma = args.gamma
         self.tau = args.tau
         self.alpha = args.alpha
+        self.skill_dim = args.skill_dim
 
         self.policy_type = args.policy
         self.target_update_interval = args.target_update_interval
@@ -22,9 +23,8 @@ class SAC(object):
         print("\n Current device is : ", self.device, "\n")
 
         self.critic = QNetwork(num_inputs, action_space.shape[0], args.hidden_size).to(device=self.device)
-        self.critic_optim = Adam(self.critic.parameters(), lr=args.lr)
-
         self.critic_target = QNetwork(num_inputs, action_space.shape[0], args.hidden_size).to(self.device)
+        self.critic_optim = Adam(self.critic.parameters(), lr=args.lr)
         hard_update(self.critic_target, self.critic)
 
         if self.policy_type == "Gaussian":
@@ -51,21 +51,33 @@ class SAC(object):
             _, _, action = self.policy.sample(state)
         return action.detach().cpu().numpy()[0]
 
-    def update_parameters(self, memory, batch_size, updates):
+    def update_parameters(self, memory, batch_size, updates, phi):
         # Sample a batch from memory
-        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample(batch_size=batch_size)
+        state_batch, action_batch, _, next_state_batch, mask_batch = memory.sample(batch_size=batch_size)
+
+        # Calculate phi.forward for next_state_batch and state_batch
+        phi_next_state = phi.forward(next_state_batch)
+        phi_state = phi.forward(state_batch)
 
         state_batch = torch.FloatTensor(state_batch).to(self.device)
         next_state_batch = torch.FloatTensor(next_state_batch).to(self.device)
+
+        skill_batch = state_batch[:, -self.skill_dim:]
+
         action_batch = torch.FloatTensor(action_batch).to(self.device)
-        reward_batch = torch.FloatTensor(reward_batch).to(self.device).unsqueeze(1)
         mask_batch = torch.FloatTensor(mask_batch).to(self.device).unsqueeze(1)
+
+        # Calculate the difference
+        phi_diff = phi_next_state - phi_state
+
+        # 'ij,ij->i' means take the dot product along the second dimension for each i in the first dimension
+        pseudo_reward_batch = torch.einsum('ij,ij->i', (phi_diff, skill_batch))
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.policy.sample(next_state_batch)
             qf1_next_target, qf2_next_target = self.critic_target(next_state_batch, next_state_action)
             min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - self.alpha * next_state_log_pi
-            next_q_value = reward_batch + mask_batch * self.gamma * (min_qf_next_target)
+            next_q_value = pseudo_reward_batch + mask_batch * self.gamma * (min_qf_next_target)
         qf1, qf2 = self.critic(state_batch, action_batch)  # Two Q-functions to mitigate positive bias in the policy improvement step
         qf1_loss = F.mse_loss(qf1, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
         qf2_loss = F.mse_loss(qf2, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]

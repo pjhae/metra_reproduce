@@ -35,7 +35,7 @@ parser.add_argument('--seed', type=int, default=123456, metavar='N',
                     help='random seed (default: 123456)')
 parser.add_argument('--batch_size', type=int, default=256, metavar='N',
                     help='batch size (default: 256)')
-parser.add_argument('--num_steps', type=int, default=1000001, metavar='N',
+parser.add_argument('--num_steps', type=int, default=100000001, metavar='N',
                     help='maximum number of steps (default: 1000000)')
 parser.add_argument('--hidden_size', type=int, default=1024, metavar='N',
                     help='hidden size (default: 1024)')
@@ -125,7 +125,6 @@ for i_epoch in itertools.count(1):
             total_numsteps += 1
             episode_reward += psuedo_reward
 
-            # Ignore the "done" signal if it comes from hitting the time horizon.
             mask = 1 if episode_steps == env._max_episode_steps else float(not done)
             memory.push(state, action, psuedo_reward, next_state, mask) # Append transition to memory
             state = next_state
@@ -138,7 +137,7 @@ for i_epoch in itertools.count(1):
         # Number of updates per step in environment
         for i in range(args.gradient_steps_per_epoch):
             # Update parameters of all the networks
-            critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, args.batch_size, updates)
+            critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, args.batch_size, updates, phi)
             phi_loss = phi.update_parameters(memory, args.batch_size, lamb.lambda_value)
             lamb_loss = lamb.update_parameters(memory, args.batch_size, phi)
             writer.add_scalar('loss/phi', phi_loss, updates)

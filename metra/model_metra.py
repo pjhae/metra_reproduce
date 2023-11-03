@@ -61,7 +61,7 @@ class Phi(nn.Module):
         phi_s = self.forward(state_batch)
         phi_next_s = self.forward(next_state_batch)
         
-        loss = (phi_next_s - phi_s).mul(torch.from_numpy(z_batch).to(self.device)).sum(1) + lambda_value.detach() * torch.min(torch.tensor(epsilon).detach(), 1 - (phi_s - phi_next_s).pow(2).sum(1))
+        loss = -(phi_next_s - phi_s).mul(torch.from_numpy(z_batch).to(self.device).detach()).sum(1) + lambda_value.detach() * torch.min(torch.tensor(epsilon).detach(), 1 - (phi_s - phi_next_s).pow(2).sum(1))
 
         self.optimizer.zero_grad()
         loss.mean().backward()
