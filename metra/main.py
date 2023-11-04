@@ -10,7 +10,7 @@ from replay_memory import ReplayMemory
 from model_metra import Phi, Lambda
 
 from utils_sac import VideoRecorder
-from utils_metra import generate_skill
+from utils_metra import generate_skill, generate_skill_cont
 
 
 parser = argparse.ArgumentParser(description='PyTorch Soft Actor-Critic Args')
@@ -40,7 +40,7 @@ parser.add_argument('--num_steps', type=int, default=100000001, metavar='N',
 parser.add_argument('--hidden_size', type=int, default=1024, metavar='N',
                     help='hidden size (default: 1024)')
 
-parser.add_argument('--gradient_steps_per_epoch', type=int, default=100, metavar='N',
+parser.add_argument('--gradient_steps_per_epoch', type=int, default=200, metavar='N',
                     help='model updates per simulator step (default: 1)')
 parser.add_argument('--episodes_per_epoch', type=int, default=8, metavar='N',
                     help='model updates per simulator step (default: 1)')
@@ -51,7 +51,7 @@ parser.add_argument('--target_update_interval', type=int, default=1, metavar='N'
                     help='Value target update per no. of updates per step (default: 1)')
 parser.add_argument('--replay_size', type=int, default=1000000, metavar='N',
                     help='size of replay buffer (default: 10000000)')
-parser.add_argument('--skill_dim', type=int, default=8, metavar='N',
+parser.add_argument('--skill_dim', type=int, default=2, metavar='N',
                     help='dimension of skill (default: 8)')
 parser.add_argument('--cuda', action="store_false",
                     help='run on CUDA (default: True)')
@@ -107,7 +107,7 @@ for i_epoch in itertools.count(1):
 
         done = False
         state = env.reset()
-        skill = generate_skill(skill_dim)
+        skill = generate_skill_cont(skill_dim)
         state = np.concatenate([state, skill])
         
         while not done:
@@ -161,9 +161,9 @@ for i_epoch in itertools.count(1):
         video.init(enabled=True)
         avg_reward = 0.
         avg_step = 0.
-        episodes = args.skill_dim
+        episodes = 10
         for i in range(episodes):
-            skill = generate_skill(skill_dim, i)
+            skill = generate_skill_cont(skill_dim)
 
             state = env.reset()
             state = np.concatenate([state, skill])

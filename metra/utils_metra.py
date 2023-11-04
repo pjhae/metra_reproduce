@@ -18,3 +18,10 @@ def generate_skill(dim, eval_idx = -1):
         vector[idx] = 1
     
     return vector
+
+
+def generate_skill_cont(dim):
+    vector = np.random.normal(0, 1, dim)
+    norm = np.linalg.norm(vector)
+    normalized_vector = vector / norm
+    return normalized_vector
