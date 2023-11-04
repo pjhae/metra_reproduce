@@ -26,7 +26,7 @@ parser.add_argument('--tau', type=float, default=0.005, metavar='G',
                     help='target smoothing coefficient(τ) (default: 0.005)')
 parser.add_argument('--lr', type=float, default=0.0001, metavar='G',
                     help='learning rate (default: 0.0001)')
-parser.add_argument('--alpha', type=float, default=0.2, metavar='G',
+parser.add_argument('--alpha', type=float, default=0.01, metavar='G',
                     help='Temperature parameter α determines the relative importance of the entropy\
                             term against the reward (default: 0.2)')
 parser.add_argument('--automatic_entropy_tuning', type=bool, default=True, metavar='G',
@@ -40,7 +40,7 @@ parser.add_argument('--num_steps', type=int, default=100000001, metavar='N',
 parser.add_argument('--hidden_size', type=int, default=1024, metavar='N',
                     help='hidden size (default: 1024)')
 
-parser.add_argument('--gradient_steps_per_epoch', type=int, default=200, metavar='N',
+parser.add_argument('--gradient_steps_per_epoch', type=int, default=100, metavar='N',
                     help='model updates per simulator step (default: 1)')
 parser.add_argument('--episodes_per_epoch', type=int, default=8, metavar='N',
                     help='model updates per simulator step (default: 1)')
@@ -51,8 +51,8 @@ parser.add_argument('--target_update_interval', type=int, default=1, metavar='N'
                     help='Value target update per no. of updates per step (default: 1)')
 parser.add_argument('--replay_size', type=int, default=1000000, metavar='N',
                     help='size of replay buffer (default: 10000000)')
-parser.add_argument('--skill_dim', type=int, default=4, metavar='N',
-                    help='dimension of skill (default: 4)')
+parser.add_argument('--skill_dim', type=int, default=8, metavar='N',
+                    help='dimension of skill (default: 8)')
 parser.add_argument('--cuda', action="store_false",
                     help='run on CUDA (default: True)')
 args = parser.parse_args()
@@ -147,6 +147,7 @@ for i_epoch in itertools.count(1):
             writer.add_scalar('loss/policy', policy_loss, updates)
             writer.add_scalar('loss/entropy_loss', ent_loss, updates)
             writer.add_scalar('entropy_temprature/alpha', alpha, updates)
+            writer.add_scalar('dual_variable/lambda', lamb.lambda_value, updates)
             updates += 1
 
     if total_numsteps > args.num_steps:
