@@ -33,14 +33,6 @@ def hard_update(target, source):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(param.data)
 
-def generate_skill(dim):
-
-    idx = np.random.randint(dim)
-    vector = np.full(dim, -1/(dim-1))
-    vector[idx] = 1
-    
-    return vector
-
 def make_dir(*path_parts):
     dir_path = os.path.join(*path_parts)
     try:

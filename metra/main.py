@@ -40,12 +40,12 @@ parser.add_argument('--num_steps', type=int, default=100000001, metavar='N',
 parser.add_argument('--hidden_size', type=int, default=1024, metavar='N',
                     help='hidden size (default: 1024)')
 
-parser.add_argument('--gradient_steps_per_epoch', type=int, default=200, metavar='N',
+parser.add_argument('--gradient_steps_per_epoch', type=int, default=50, metavar='N',
                     help='model updates per simulator step (default: 1)')
 parser.add_argument('--episodes_per_epoch', type=int, default=8, metavar='N',
                     help='model updates per simulator step (default: 1)')
 
-parser.add_argument('--start_steps', type=int, default=10000, metavar='N',
+parser.add_argument('--start_steps', type=int, default=100, metavar='N',
                     help='Steps sampling random actions (default: 10000)')
 parser.add_argument('--target_update_interval', type=int, default=1, metavar='N',
                     help='Value target update per no. of updates per step (default: 1)')
@@ -196,7 +196,6 @@ for i_epoch in itertools.count(1):
 
         avg_psuedo_reward /= episodes
         avg_dist_reward /= episodes
-        
         avg_step /= episodes
         
         video.save('test_{}.mp4'.format(episode_idx))
