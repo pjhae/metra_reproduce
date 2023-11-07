@@ -21,7 +21,13 @@ def generate_skill(dim, eval_idx = -1):
 
 
 def generate_skill_cont(dim):
-    vector = np.random.normal(0, 1, dim)
-    norm = np.linalg.norm(vector)
+
+    while True:
+        vector = np.random.normal(0, 1, dim)
+        norm = np.linalg.norm(vector)
+
+        if norm > 1e-3:
+            break
+
     normalized_vector = vector / norm
     return normalized_vector

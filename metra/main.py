@@ -94,6 +94,8 @@ agent = SAC(env.observation_space.shape[0] + skill_dim, env.action_space, args)
 # phi
 phi = Phi(env.observation_space.shape[0], args).to(device)
 
+print("state :", env.observation_space.shape[0])
+
 # lambda
 lamb = Lambda(args)
 lamb.lambda_value = lamb.lambda_value.to(device)
@@ -153,13 +155,14 @@ for i_epoch in itertools.count(1):
     if total_numsteps > args.num_steps:
         break   
         
-    if episode_idx % 40 == 0:
+    if episode_idx % 200 == 0:
         agent.save_checkpoint(args.env_name,"{}".format(episode_idx))
 
     # Evaluate all skill
-    if episode_idx % 40 == 0:
+    if episode_idx % 200 == 0:
         video.init(enabled=True)
-        avg_reward = 0.
+        avg_psuedo_reward = 0.
+        avg_dist_reward = 0.
         avg_step = 0.
         episodes = 10
         for i in range(episodes):
@@ -169,7 +172,9 @@ for i_epoch in itertools.count(1):
             state = np.concatenate([state, skill])
 
             episode_steps = 0
-            episode_reward = 0
+
+            episode_psuedo_reward = 0
+            episode_dist_reward = 0
 
             done = False
             
@@ -181,21 +186,27 @@ for i_epoch in itertools.count(1):
                 next_state = np.concatenate([next_state, skill])
                 psuedo_reward = np.dot(phi.forward_np(next_state) - phi.forward_np(state), skill) 
 
-                episode_reward += psuedo_reward
+                episode_psuedo_reward += psuedo_reward
+                episode_dist_reward += np.linalg.norm(state[:2])
                 episode_steps += 1
 
-            avg_reward += episode_reward
+            avg_psuedo_reward += episode_psuedo_reward
+            avg_dist_reward += episode_dist_reward
             avg_step += episode_steps
-        avg_reward /= episodes
-        avg_step /= episodes
 
+        avg_psuedo_reward /= episodes
+        avg_dist_reward /= episodes
+        
+        avg_step /= episodes
+        
         video.save('test_{}.mp4'.format(episode_idx))
         video.init(enabled=False)
 
-        writer.add_scalar('avg_reward/test', avg_reward, total_numsteps)
+        writer.add_scalar('avg_psuedo_reward/test', avg_psuedo_reward, total_numsteps)
+        writer.add_scalar('avg_dist_reward/test', avg_dist_reward, total_numsteps)
 
         print("----------------------------------------")
-        print("Test Episodes: {}, Avg. Reward: {}, Avg. step: {}".format(episodes, round(avg_reward, 2), round(avg_step, 2)))
+        print("Test Episodes: {}, Avg. Reward: {}, Avg. step: {}".format(episodes, round(avg_psuedo_reward, 2), round(avg_step, 2)))
         print("----------------------------------------")
 
 env.close()
