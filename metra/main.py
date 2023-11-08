@@ -31,8 +31,8 @@ parser.add_argument('--alpha', type=float, default=0.01, metavar='G',
                             term against the reward (default: 0.2)')
 parser.add_argument('--automatic_entropy_tuning', type=bool, default=True, metavar='G',
                     help='Automaically adjust α (default: True)')
-parser.add_argument('--seed', type=int, default=123456, metavar='N',
-                    help='random seed (default: 123456)')
+parser.add_argument('--seed', type=int, default=12345, metavar='N',
+                    help='random seed (default: 12345)')
 parser.add_argument('--batch_size', type=int, default=256, metavar='N',
                     help='batch size (default: 256)')
 parser.add_argument('--num_steps', type=int, default=100000001, metavar='N',
@@ -50,7 +50,7 @@ parser.add_argument('--start_steps', type=int, default=100, metavar='N',
 parser.add_argument('--target_update_interval', type=int, default=1, metavar='N',
                     help='Value target update per no. of updates per step (default: 1)')
 parser.add_argument('--replay_size', type=int, default=1000000, metavar='N',
-                    help='size of replay buffer (default: 10000000)')
+                    help='size of replay buffer (default: 1000000)')
 parser.add_argument('--skill_dim', type=int, default=2, metavar='N',
                     help='dimension of skill (default: 8)')
 parser.add_argument('--cuda', action="store_false",
@@ -94,11 +94,11 @@ agent = SAC(env.observation_space.shape[0] + skill_dim, env.action_space, args)
 # phi
 phi = Phi(env.observation_space.shape[0], args).to(device)
 
+# Check action dim
 print("state :", env.observation_space.shape[0])
 
 # lambda
 lamb = Lambda(args)
-lamb.lambda_value = lamb.lambda_value.to(device)
 
 # Training Loop
 for i_epoch in itertools.count(1):
@@ -139,9 +139,10 @@ for i_epoch in itertools.count(1):
         # Number of updates per step in environment
         for i in range(args.gradient_steps_per_epoch):
             # Update parameters of all the networks
-            critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, args.batch_size, updates, phi)
             phi_loss = phi.update_parameters(memory, args.batch_size, lamb.lambda_value)
             lamb_loss = lamb.update_parameters(memory, args.batch_size, phi)
+            critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory, args.batch_size, updates, phi)
+
             writer.add_scalar('loss/phi', phi_loss, updates)
             writer.add_scalar('loss/lambda', lamb_loss, updates)
             writer.add_scalar('loss/critic_1', critic_1_loss, updates)
@@ -155,24 +156,23 @@ for i_epoch in itertools.count(1):
     if total_numsteps > args.num_steps:
         break   
         
-    if episode_idx % 200 == 0:
+    if episode_idx % 400 == 0:
         agent.save_checkpoint(args.env_name,"{}".format(episode_idx))
 
     # Evaluate all skill
-    if episode_idx % 200 == 0:
+    if episode_idx % 400 == 0:
         video.init(enabled=True)
         avg_psuedo_reward = 0.
         avg_dist_reward = 0.
         avg_step = 0.
-        episodes = 10
+        episodes = 8
         for i in range(episodes):
-            skill = generate_skill_cont(skill_dim)
-
+            
             state = env.reset()
+            skill = generate_skill_cont(skill_dim)
             state = np.concatenate([state, skill])
 
             episode_steps = 0
-
             episode_psuedo_reward = 0
             episode_dist_reward = 0
 
@@ -190,6 +190,9 @@ for i_epoch in itertools.count(1):
                 episode_dist_reward += np.linalg.norm(state[:2])
                 episode_steps += 1
 
+                state = next_state
+
+
             avg_psuedo_reward += episode_psuedo_reward
             avg_dist_reward += episode_dist_reward
             avg_step += episode_steps
@@ -201,8 +204,8 @@ for i_epoch in itertools.count(1):
         video.save('test_{}.mp4'.format(episode_idx))
         video.init(enabled=False)
 
-        writer.add_scalar('avg_psuedo_reward/test', avg_psuedo_reward, total_numsteps)
-        writer.add_scalar('avg_dist_reward/test', avg_dist_reward, total_numsteps)
+        writer.add_scalar('avg_psuedo_reward/test', avg_psuedo_reward, episode_idx)
+        writer.add_scalar('avg_dist_reward/test', avg_dist_reward, episode_idx)
 
         print("----------------------------------------")
         print("Test Episodes: {}, Avg. Reward: {}, Avg. step: {}".format(episodes, round(avg_psuedo_reward, 2), round(avg_step, 2)))

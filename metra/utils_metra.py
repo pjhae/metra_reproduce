@@ -25,9 +25,9 @@ def generate_skill_cont(dim):
     while True:
         vector = np.random.normal(0, 1, dim)
         norm = np.linalg.norm(vector)
-
-        if norm > 1e-3:
+        if norm > 1e-6:
             break
 
     normalized_vector = vector / norm
+    
     return normalized_vector

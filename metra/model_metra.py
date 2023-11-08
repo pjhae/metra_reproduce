@@ -83,7 +83,7 @@ class Lambda():
         phi_s = phi_net(state_batch).detach() 
         phi_next_s = phi_net(next_state_batch).detach() 
 
-        loss = self.lambda_value * torch.min(torch.tensor(epsilon).detach(), 1 - (phi_s - phi_next_s).pow(2).sum(1))
+        loss = self.lambda_value * torch.min(torch.tensor(epsilon).detach(), 1 - ( phi_s - phi_next_s).pow(2).sum(1))
 
         self.optimizer.zero_grad()
         loss.mean().backward()
