@@ -6,7 +6,8 @@ This repository contains a from-scratch reproduction of the [METRA](https://arxi
 
 The following image provides a psuedo code of the METRA algorithm:
 
-![Schematic of METRA Algorithm](image.png)
+![image](https://github.com/pjhae/metra_reproduce/assets/74540268/721db802-c0e8-4e53-913d-cc45f90765ec)
+
 
 
 
@@ -14,4 +15,4 @@ The following image provides a psuedo code of the METRA algorithm:
 
 For a demonstration of the METRA algorithm's performance in the Ant-v3 environment, view the gif below:
 
-![Alt text](Screencast-from-2023%EB%85%84-11%EC%9B%94-08%EC%9D%BC-19%EC%8B%9C-18%EB%B6%84-06%EC%B4%88.gif)
+![Screencast-from-2023년-11월-08일-19시-18분-06초](https://github.com/pjhae/metra_reproduce/assets/74540268/eaf30e77-5a99-4e1d-a431-a2dd79ce2a4c)
